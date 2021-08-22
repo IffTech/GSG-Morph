@@ -6,6 +6,12 @@ G/SG Morph is an implementation of [Calude et al.'s "QUBO formulations for the g
 
 The code in the `gsg_morph.py` file has variable names as well as a structure that closely follow the formulations in the original paper (with optimizations added where possible), made possible with [PyQUBO](https://github.com/recruit-communications/pyqubo). As a result, it should be easy to follow the math in the paper and the operation of the code. 
 
+## Dependencies
+
+G/SG Morph requires PyQUBO to be installed.
+
+Please follow the instructions [here](https://pyqubo.readthedocs.io/en/latest/getting_started.html) to get started.
+
 ## High Level Overview
 
 G/SG Morph contains three core functions, `graph_isomorphism()`, `subgraph_isomorphism()`, and `translate_sample()`.
