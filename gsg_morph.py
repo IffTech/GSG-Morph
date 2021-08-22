@@ -176,6 +176,12 @@ def subgraph_isomorphism(graph_to_embed, target_graph):
     n1 = graph_to_embed.number_of_nodes()
     n2 = target_graph.number_of_nodes()
 
+    # Ensure that the requirements
+    # |V1| <= |V2| (graph to embed must have number of nodes less than
+    # or equal to target graph)
+    # and |E1| <= |E2| (graph to embed must have number of edges
+    # less than or equal to target graph)
+    # holds
     if(n1 > n2):
         raise IncompatibleGraphError("The graph to embed has more nodes"
                                      " than the target graph!")
@@ -193,6 +199,9 @@ def subgraph_isomorphism(graph_to_embed, target_graph):
                       "are not introduced to the QUBO",
                       UserWarning, stacklevel=2)
 
+    # target_graph_dict and graph_to_embed dict are used to
+    # translate between the integer indices found in Calude et al.'s
+    # paper and any hashable type used in the NetworkX graph.
     target_graph_dict = {i: node for i, node
                          in enumerate(target_graph.nodes())}
 
@@ -205,6 +214,10 @@ def subgraph_isomorphism(graph_to_embed, target_graph):
                 (graph_to_embed_node, target_graph_node)
         graph_to_embed_dict[graph_to_embed_node] = i
 
+    # Generate a vector of binary variables (similar to the
+    # graph isomorphism QUBO problem) along with a number of slack
+    # binary varialbes equal to the number of nodes in
+    # the target graph
     bin_vec = pq.Array.create('x', shape=(n1, n2), vartype='BINARY')
     slack_bin_vec = pq.Array.create('y', shape=n2, vartype='BINARY')
 
