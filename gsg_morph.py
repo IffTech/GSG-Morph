@@ -1,4 +1,5 @@
 import pyqubo as pq
+import networkx as nx
 import warnings
 
 
@@ -117,8 +118,8 @@ def graph_isomorphism(graph_to_embed, target_graph):
         h1_iter_sum = 0
         h2_iter_sum = 0
         for i_prime in range(num_nodes):
-            h1_iter_sum += bin_vec[(i, i_prime)]
-            h2_iter_sum += bin_vec[(i_prime, i)]
+            h1_iter_sum += bin_vec[i, i_prime]
+            h2_iter_sum += bin_vec[i_prime, i]
         h1_iter_sum = (1 - h1_iter_sum)**2
         h2_iter_sum = (1 - h2_iter_sum)**2
         h += (h1_iter_sum + h2_iter_sum)
@@ -132,17 +133,17 @@ def graph_isomorphism(graph_to_embed, target_graph):
         for i_prime in range(num_nodes):
             inner_sum = 0
             for j_prime in range(num_nodes):
-                inner_sum += bin_vec[(j, j_prime)] \
+                inner_sum += bin_vec[j, j_prime] \
                           * (1 - has_edge(target_graph,
                                           (target_graph_dict[i_prime],
                                            target_graph_dict[j_prime])))
-            outer_sum += bin_vec[(i, i_prime)] * inner_sum
+            outer_sum += bin_vec[i, i_prime] * inner_sum
         p += outer_sum
 
     return h + p, sample_translation_dict
 
 
-def subgraph_isomorphism(graph_to_embed, target_graph):
+def subgraph_isomorphism(graph_to_embed, target_graph, induced=False):
     """Subgraph Isomorphism QUBO generator. Given a graph to embed
     (graph_to_embed) onto a target graph (target_graph), a PyQUBO
     expression is returned along with a dictionary that allows for
@@ -230,7 +231,7 @@ def subgraph_isomorphism(graph_to_embed, target_graph):
     for i in range(n1):
         hx_iter_sum = 0
         for i_prime in range(n2):
-            hx_iter_sum += bin_vec[(i, i_prime)]
+            hx_iter_sum += bin_vec[i, i_prime]
         hx_iter_sum = (1 - hx_iter_sum)**2
         hx += hx_iter_sum
 
@@ -238,27 +239,46 @@ def subgraph_isomorphism(graph_to_embed, target_graph):
     for i_prime in range(n2):
         hy_iter_sum = 0
         for i in range(n1):
-            hy_iter_sum += (bin_vec[(i, i_prime)]
+            hy_iter_sum += (bin_vec[i, i_prime]
                             - slack_bin_vec[i_prime])
         hy_iter_sum = (1 - hy_iter_sum)**2
         hy += hy_iter_sum
 
-    # Part of the QUBO that ensures edge invariance
+    # Part of the QUBO that ensures the preservation of edges
     p = 0
     for edge in graph_to_embed.edges:
-        i, j = edge
-        i = graph_to_embed_dict[i]
-        j = graph_to_embed_dict[j]
+        i = graph_to_embed_dict[edge[0]]
+        j = graph_to_embed_dict[edge[1]]
         outer_sum = 0
         for i_prime in range(n2):
             inner_sum = 0
             for j_prime in range(n2):
-                inner_sum += bin_vec[(j, j_prime)] \
+                inner_sum += bin_vec[j, j_prime] \
                           * (1 - has_edge(target_graph,
                                           (target_graph_dict[i_prime],
                                            target_graph_dict[j_prime])))
-            outer_sum += bin_vec[(i, i_prime)] * inner_sum
+            outer_sum += bin_vec[i, i_prime] * inner_sum
         p += outer_sum
+
+    # If the "induced" argument is set to 'True', additional
+    # constraints are added such that the QUBO is edge invariant as well
+    if induced:
+        n = 0
+        for non_edge in nx.non_edges(graph_to_embed):
+            i = graph_to_embed_dict[non_edge[0]]
+            j = graph_to_embed_dict[non_edge[1]]
+            outer_sum = 0
+            for i_prime in range(n2):
+                inner_sum = 0
+                for j_prime in range(n2):
+                    inner_sum += bin_vec[j, j_prime] \
+                              * has_edge(target_graph,
+                                         (target_graph_dict[i_prime],
+                                          target_graph_dict[j_prime]))
+                outer_sum += bin_vec[i, i_prime] * inner_sum
+            n += outer_sum
+
+        return hx + hy + p + n, sample_translation_dict
 
     return hx + hy + p, sample_translation_dict
 
