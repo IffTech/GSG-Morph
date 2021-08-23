@@ -156,6 +156,10 @@ def subgraph_isomorphism(graph_to_embed, target_graph, induced=False):
         target_graph (networkx.classes.graph.Graph):
             An undirected graph that the graph_to_embed (see above)
             is to be mapped onto.
+        induced (bool):
+            By default set to False, but if set to True will add
+            additional constraints to produce the Induced Subgraph
+            Isomorphism QUBO
 
     Raises:
         IncompatibleGraphError:
