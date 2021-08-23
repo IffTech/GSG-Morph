@@ -8,9 +8,9 @@ The code in the `gsg_morph.py` file has variable names as well as a structure th
 
 ## Dependencies
 
-G/SG Morph requires PyQUBO to be installed.
+G/SG Morph requires PyQUBO and NetworkX to be installed.
 
-Please follow the instructions [here](https://pyqubo.readthedocs.io/en/latest/getting_started.html) to get started.
+Please follow the instructions [here](https://pyqubo.readthedocs.io/en/latest/getting_started.html) to install PyQUBO and [here](https://networkx.org/documentation/stable/install.html) for NetworkX.
 
 ## High Level Overview
 
@@ -19,6 +19,8 @@ G/SG Morph contains three core functions, `graph_isomorphism()`, `subgraph_isomo
 Both `graph_isomorphism()` and `subgraph_isomorphism()` take two [NetworkX](https://networkx.org/) graphs (a "graph to embed" onto a  "target graph") and will generate a PyQUBO expression that can then be converted to QUBO, Ising, or BQM format suitable for running on a simulated annealer such as [D-Wave Neal](https://github.com/dwavesystems/dwave-neal) or actual hardware.
 
 The above functions also return a dictionary that, in conjunction with a sample from an annelear translated by PyQUBO, can be translated into a dictionary that maps nodes from the graph to embed to the target graph with the help of `translate_sample()`.
+
+`subgraph_isomorphism()` also has an additional `induced` argument that can be set to `True` indicating that you would to generate an expression for the Induced Subgraph Isomorphism problem.
 
 ## Examples
 
