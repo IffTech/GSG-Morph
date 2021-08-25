@@ -3,6 +3,10 @@ import networkx as nx
 import warnings
 
 
+def min_max_scale(x, x_min, x_max):
+    return (x - x_min) / (x_max - x_min)
+
+
 class IncompatibleGraphError(Exception):
     """Exception used when graphs are given to generate a QUBO that
     fail to satisfy or violate the conditions needed to generate the
@@ -143,7 +147,8 @@ def graph_isomorphism(graph_to_embed, target_graph):
     return h + p, sample_translation_dict
 
 
-def subgraph_isomorphism(graph_to_embed, target_graph, induced=False):
+def subgraph_isomorphism(graph_to_embed, target_graph, induced=False,
+                         node_weight_attr=None, edge_weight_attr=None):
     """Subgraph Isomorphism QUBO generator. Given a graph to embed
     (graph_to_embed) onto a target graph (target_graph), a PyQUBO
     expression is returned along with a dictionary that allows for
@@ -266,8 +271,8 @@ def subgraph_isomorphism(graph_to_embed, target_graph, induced=False):
 
     # If the "induced" argument is set to 'True', additional
     # constraints are added such that the QUBO is edge invariant as well
+    n = 0
     if induced:
-        n = 0
         for non_edge in nx.non_edges(graph_to_embed):
             i = graph_to_embed_dict[non_edge[0]]
             j = graph_to_embed_dict[non_edge[1]]
@@ -282,9 +287,46 @@ def subgraph_isomorphism(graph_to_embed, target_graph, induced=False):
                 outer_sum += bin_vec[i, i_prime] * inner_sum
             n += outer_sum
 
-        return hx + hy + p + n, sample_translation_dict
+    node_weight_term = 0
+    if node_weight_attr is not None:
+        # find all mappings in the bin-vec that have the mapping 
+        # in question
 
-    return hx + hy + p, sample_translation_dict
+        # get min and max node weight values
+        node_weight_min = min(nx.get_node_attributes(target_graph, node_weight_attr).values())
+        node_weight_max = max(nx.get_node_attributes(target_graph, node_weight_attr).values())
+
+        # n1 = graph to embed
+        # n2 = target graph
+        for i in range(n1):
+            for j in range(n2):
+                node_weight_term += (bin_vec[i][j] 
+                                     * min_max_scale((target_graph.nodes[target_graph_dict[j]][node_weight_attr]), node_weight_min, node_weight_max))
+    
+    edge_weight_term = 0
+    if edge_weight_attr is not None:
+        node_weight_min = min(nx.get_edge_attributes(target_graph, edge_weight_attr).values())
+        node_weight_max = max(nx.get_edge_attributes(target_graph, edge_weight_attr).values())
+
+        # n1 = graph to embed
+        # n2 = target graph
+        # target_graph (int -> node_name)
+        for i in range(n2):
+            for j in range(n2):
+                # i,j is a valid edge
+                # bin_vec[:,i], bin_vec[:,j] should all be multipled together
+                target_node_i = target_graph_dict[i]
+                target_node_j = target_graph_dict[j]
+                edge_penalty_vars = 0
+                if has_edge(target_graph, (target_node_i, target_node_j)) == 1:
+                    for bin_var_i in bin_vec[:, i]:
+                        for bin_var_j in bin_vec[:, j]:
+                            edge_penalty_vars += bin_var_i * bin_var_j
+                    edge_weight_term += (min_max_scale(target_graph[target_node_i][target_node_j][edge_weight_attr], node_weight_min, node_weight_max)
+                                         * edge_penalty_vars)
+            
+
+    return hx + hy + p + n + node_weight_term + edge_weight_term, sample_translation_dict
 
 
 def translate_sample(sample, sample_translation_dict):
