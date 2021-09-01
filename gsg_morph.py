@@ -1,6 +1,7 @@
-import pyqubo as pq
 import networkx as nx
 import warnings
+from itertools import product
+from collections import defaultdict
 
 
 class IncompatibleGraphError(Exception):
@@ -40,11 +41,10 @@ def has_edge(graph, edge_tuple):
 
 
 def graph_isomorphism(graph_to_embed, target_graph):
-    """Subgraph Isomorphism QUBO generator. Given a graph to embed
-    (graph_to_embed) onto a target graph (target_graph), a PyQUBO
-    expression is returned along with a dictionary that allows for
-    translation from the QUBO variables to the potential node mapping
-    combinations.
+    """Graph Isomorphism QUBO generator. Given a graph to embed
+    (graph_to_embed) onto a target graph (target_graph), a QUBO
+    is returned along with a dictionary that allows for translation from
+    the QUBO variables to the potential node mapping combinations.
 
     Args:
         graph_to_embed (networkx.classes.graph.Graph):
@@ -61,10 +61,11 @@ def graph_isomorphism(graph_to_embed, target_graph):
             exception is raised and the QUBO is not generated.
 
     Returns:
-        (pyqubo.Add, sample_translation_dict (dict of str: (networkx
-        node (any hashable object), networkx node)):
-            A tuple containing a PyQUBO expression and a dictionary for
-            translating from the variable names used in the QUBO to the
+        (defaultdict(int), { int: (networkx
+        node (any hashable object), networkx node) }:
+            A tuple containing a QUBO represented by a defaultdict with
+            `int()` as the `default_factory` attribute and a dictionary
+            for translating from the indices used in the QUBO to the
             potential node mappings (represented as tuples).
             The dictionary should be passed to `translate_sample()` to
             generate the proper node-to-node mapping.
@@ -84,71 +85,69 @@ def graph_isomorphism(graph_to_embed, target_graph):
         raise IncompatibleGraphError("The number of edges "
                                      "do not match!")
 
+    # get the "n" used for indexing
+    num_nodes = graph_to_embed.number_of_nodes()
+
     # target_graph_dict and graph_to_embed dict are used to
     # translate between the integer indices found in Calude et al.'s
     # paper and any hashable type used in the NetworkX graph.
     target_graph_dict = {i: node for i, node
                          in enumerate(target_graph.nodes())}
-    graph_to_embed_dict = dict()
+    graph_to_embed_dict = {node: i for i, node
+                           in enumerate(graph_to_embed.nodes())}
 
-    # Allows for translation from the QUBO variable names
-    # which follow an `x[i][j]` format to that of the actual
-    # potential node mappings (stored in a tuple)
-    sample_translation_dict = dict()
+    # Allow for samples to be translated
+    # back to prospective node mappings (must be fed by user to
+    # `translate_sample()` along with sample from `dimod.SampleSet`)
+    sample_translation_dict = {i: v for i, v in
+                               enumerate(product(graph_to_embed.nodes(),
+                                                 target_graph.nodes()))}
 
-    for i, graph_to_embed_node in enumerate(graph_to_embed.nodes()):
-        for j, target_graph_node in enumerate(target_graph.nodes()):
-            sample_translation_dict['x[{0}][{1}]'.format(i, j)] = \
-                (graph_to_embed_node, target_graph_node)
-        graph_to_embed_dict[graph_to_embed_node] = i
+    # translate summation indices to individual QUBO indices
+    # `product` usage inspired by: https://arxiv.org/pdf/2009.00140.pdf
+    # code repository: https://github.com/bdury/QUBO-for-Qubit-Allocation
+    td = {v: k for k, v in enumerate(product(range(num_nodes),
+                                             range(num_nodes)))}
 
-    num_nodes = graph_to_embed.number_of_nodes()
+    # initialize empty QUBO
+    Q = defaultdict(int)
 
-    # Generate a vector of binary variables
-    bin_vec = pq.Array.create('x', shape=(num_nodes, num_nodes),
-                              vartype='BINARY')
-
-    # Part of the QUBO that enforces bijectivity.
-    # In Calude et al.'s paper, the function (H(x)) has two seperate
-    # summation terms but they have been combined here for the sake of
-    # performance
-
-    h = 0
+    # Ensure mapping function is bijective
     for i in range(num_nodes):
-        h1_iter_sum = 0
-        h2_iter_sum = 0
-        for i_prime in range(num_nodes):
-            h1_iter_sum += bin_vec[i, i_prime]
-            h2_iter_sum += bin_vec[i_prime, i]
-        h1_iter_sum = (1 - h1_iter_sum)**2
-        h2_iter_sum = (1 - h2_iter_sum)**2
-        h += (h1_iter_sum + h2_iter_sum)
+        for i_p in range(num_nodes):
+            Q[td[i, i_p], td[i, i_p]] += -2
+            for j, j_p in zip(range(num_nodes), range(num_nodes)):
+                if j != i:
+                    if td[i, i_p] <= td[j, i_p]:
+                        Q[td[i, i_p], td[j, i_p]] += 1
+                    else:
+                        Q[td[j, i_p], td[i, i_p]] += 1
+                if j_p != i_p:
+                    if td[i, i_p] <= td[i, j_p]:
+                        Q[td[i, i_p], td[i, j_p]] += 1
+                    else:
+                        Q[td[i, j_p], td[i, i_p]] += 1
 
-    # Part of the QUBO responsible for ensuring edge invariance
-    p = 0
-    for edge in graph_to_embed.edges:
-        i = graph_to_embed_dict[edge[0]]
-        j = graph_to_embed_dict[edge[1]]
-        outer_sum = 0
-        for i_prime in range(num_nodes):
-            inner_sum = 0
-            for j_prime in range(num_nodes):
-                inner_sum += bin_vec[j, j_prime] \
-                          * (1 - has_edge(target_graph,
-                                          (target_graph_dict[i_prime],
-                                           target_graph_dict[j_prime])))
-            outer_sum += bin_vec[i, i_prime] * inner_sum
-        p += outer_sum
+    # Ensure edge invariance
+    for edge in graph_to_embed.edges():
+        i, j = graph_to_embed_dict[edge[0]], graph_to_embed_dict[edge[1]]
+        for i_p in range(num_nodes):
+            for j_p in range(num_nodes):
+                if not target_graph.has_edge(target_graph_dict[i_p],
+                                             target_graph_dict[j_p]):
+                    if td[i, i_p] <= td[j, j_p]:
+                        Q[td[i, i_p], td[j, j_p]] += 1
+                    else:
+                        Q[td[j, j_p], td[i, i_p]] += 1
 
-    return h + p, sample_translation_dict
+    return Q, sample_translation_dict
 
 
 def subgraph_isomorphism(graph_to_embed, target_graph, induced=False):
     """Subgraph Isomorphism QUBO generator. Given a graph to embed
-    (graph_to_embed) onto a target graph (target_graph), a PyQUBO
-    expression is returned along with a dictionary that allows for
-    translation from the QUBO variables to the potential node mapping
-    combinations.
+    (graph_to_embed) onto a target graph (target_graph), a QUBO
+    is returned along with a dictionary that allows for translation from
+    the QUBO variables to the potential node mapping combinations.
 
     Args:
         graph_to_embed (networkx.classes.graph.Graph):
@@ -156,10 +155,6 @@ def subgraph_isomorphism(graph_to_embed, target_graph, induced=False):
         target_graph (networkx.classes.graph.Graph):
             An undirected graph that the graph_to_embed (see above)
             is to be mapped onto.
-        induced (bool):
-            By default set to False, but if set to True will add
-            additional constraints to produce the Induced Subgraph
-            Isomorphism QUBO
 
     Raises:
         IncompatibleGraphError:
@@ -169,15 +164,17 @@ def subgraph_isomorphism(graph_to_embed, target_graph, induced=False):
             exception is raised and the QUBO is not generated.
 
     Returns:
-        (pyqubo.Add, sample_translation_dict (dict of str: (networkx
-        node (any hashable object), networkx node)):
-            A tuple containing a PyQUBO expression and a dictionary for
-            translating from the variable names used in the QUBO to the
+        (defaultdict(int), { int: (networkx
+        node (any hashable object), networkx node) }:
+            A tuple containing a QUBO represented by a defaultdict with
+            `int()` as the `default_factory` attribute and a dictionary
+            for translating from the indices used in the QUBO to the
             potential node mappings (represented as tuples).
             The dictionary should be passed to `translate_sample()` to
             generate the proper node-to-node mapping.
     """
 
+    # Get number of nodes from each graph
     n1 = graph_to_embed.number_of_nodes()
     n2 = target_graph.number_of_nodes()
 
@@ -209,86 +206,79 @@ def subgraph_isomorphism(graph_to_embed, target_graph, induced=False):
     # paper and any hashable type used in the NetworkX graph.
     target_graph_dict = {i: node for i, node
                          in enumerate(target_graph.nodes())}
+    graph_to_embed_dict = {node: i for i, node
+                           in enumerate(graph_to_embed.nodes())}
 
-    sample_translation_dict = dict()
-    graph_to_embed_dict = dict()
+    # translate answers back to prospective node mappings
+    sample_translation_dict = {i: v for i, v in
+                               enumerate(product(graph_to_embed.nodes(),
+                                                 target_graph.nodes()))}
 
-    for i, graph_to_embed_node in enumerate(graph_to_embed.nodes()):
-        for j, target_graph_node in enumerate(target_graph.nodes()):
-            sample_translation_dict['x[{0}][{1}]'.format(i, j)] = \
-                (graph_to_embed_node, target_graph_node)
-        graph_to_embed_dict[graph_to_embed_node] = i
+    # translate summation indices to individual QUBO indices
+    td = {v: k for k, v in enumerate(product(range(n1),
+                                             range(n2)))}
+    td.update({i: i + len(td) for i in range(n2)})
 
-    # Generate a vector of binary variables (similar to the
-    # graph isomorphism QUBO problem) along with a number of slack
-    # binary varialbes equal to the number of nodes in
-    # the target graph
-    bin_vec = pq.Array.create('x', shape=(n1, n2), vartype='BINARY')
-    slack_bin_vec = pq.Array.create('y', shape=n2, vartype='BINARY')
+    # initialize empty QUBO
+    Q = defaultdict(int)
 
-    # Part of the QUBO that enforces injectivity.
-    # In Calude et al.'s paper, the function (H(z)) is split into
-    # two terms. The first term only takes the variables in the main
-    # binary vector while the second term takes additional slack
-    # variables.
-    hx = 0
-    for i in range(n1):
-        hx_iter_sum = 0
-        for i_prime in range(n2):
-            hx_iter_sum += bin_vec[i, i_prime]
-        hx_iter_sum = (1 - hx_iter_sum)**2
-        hx += hx_iter_sum
-
-    hy = 0
-    for i_prime in range(n2):
-        hy_iter_sum = 0
+    # Part of the QUBO that enforces the domain
+    for i_p in range(n2):
+        Q[td[i_p], td[i_p]] += -1
         for i in range(n1):
-            hy_iter_sum += (bin_vec[i, i_prime]
-                            - slack_bin_vec[i_prime])
-        hy_iter_sum = (1 - hy_iter_sum)**2
-        hy += hy_iter_sum
+            Q[td[i, i_p], td[i, i_p]] += -2
+            if td[i, i_p] <= td[i_p]:
+                Q[td[i, i_p], td[i_p]] += 2
+            else:
+                Q[td[i_p], td[i, i_p]] += 2
+            for j in range(n1):
+                if i != j:
+                    if td[i, i_p] <= td[j, i_p]:
+                        Q[td[i, i_p], td[j, i_p]] += 1
+                    else:
+                        Q[td[j, i_p], td[i, i_p]] += 1
+            for j_p in range(n2):
+                if i_p != j_p:
+                    if td[i, i_p] <= td[i, j_p]:
+                        Q[td[i, i_p], td[i, j_p]] += 1
+                    else:
+                        Q[td[i, j_p], td[i, i_p]] += 1
 
-    # Part of the QUBO that ensures the preservation of edges
-    p = 0
-    for edge in graph_to_embed.edges:
-        i = graph_to_embed_dict[edge[0]]
-        j = graph_to_embed_dict[edge[1]]
-        outer_sum = 0
-        for i_prime in range(n2):
-            inner_sum = 0
-            for j_prime in range(n2):
-                inner_sum += bin_vec[j, j_prime] \
-                          * (1 - has_edge(target_graph,
-                                          (target_graph_dict[i_prime],
-                                           target_graph_dict[j_prime])))
-            outer_sum += bin_vec[i, i_prime] * inner_sum
-        p += outer_sum
+    # Part of the QUBO that ensures edge preservation
+    # Calude et al. note "the function ... is not necessarily 
+    # edge-invariant: it has only to be “edge-preserving"
 
-    # If the "induced" argument is set to 'True', additional
-    # constraints are added such that the QUBO is edge invariant as well
+    for edge in graph_to_embed.edges():
+        i, j = graph_to_embed_dict[edge[0]], graph_to_embed_dict[edge[1]]
+        for i_p in range(n2):
+            for j_p in range(n2):
+                if not target_graph.has_edge(target_graph_dict[i_p],
+                                             target_graph_dict[j_p]):
+                    if td[i, i_p] <= td[j, j_p]:
+                        Q[td[i, i_p], td[j, j_p]] += 1
+                    else:
+                        Q[td[j, j_p], td[i, i_p]] += 1
+
+    # If the induced option is chosen, the node mapping
+    # must be invariant as well and additional penalties added
     if induced:
-        n = 0
         for non_edge in nx.non_edges(graph_to_embed):
-            i = graph_to_embed_dict[non_edge[0]]
-            j = graph_to_embed_dict[non_edge[1]]
-            outer_sum = 0
-            for i_prime in range(n2):
-                inner_sum = 0
-                for j_prime in range(n2):
-                    inner_sum += bin_vec[j, j_prime] \
-                              * has_edge(target_graph,
-                                         (target_graph_dict[i_prime],
-                                          target_graph_dict[j_prime]))
-                outer_sum += bin_vec[i, i_prime] * inner_sum
-            n += outer_sum
+            i, j = (graph_to_embed_dict[non_edge[0]],
+                    graph_to_embed_dict[non_edge[1]])
+            for i_p in range(n2):
+                for j_p in range(n2):
+                    if target_graph.has_edge(target_graph_dict[i_p],
+                                             target_graph_dict[j_p]):
+                        if td[i, i_p] <= td[j, j_p]:
+                            Q[td[i, i_p], td[j, j_p]] += 1
+                        else:
+                            Q[td[j, j_p], td[i, i_p]] += 1
 
-        return hx + hy + p + n, sample_translation_dict
-
-    return hx + hy + p, sample_translation_dict
+    return Q, sample_translation_dict
 
 
 def translate_sample(sample, sample_translation_dict):
-    """ Takes a sample already translated from PyQUBO and a translation
+    """ Takes a sample from an annealing run and a translation
     dictionary returned from either `subgraph_isomorphism()` or
     `graph_isomorphism()` to generate a dictionary that maps nodes
     from the graph to embed to the target graph in the above two
@@ -299,25 +289,25 @@ def translate_sample(sample, sample_translation_dict):
             A sample from an annealer, that has already undergone
             translation via PyQUBO back into the original QUBO
             variable names
-        sample_translation_dict (dict of str: (networkx node
-        (any hashable object), networkx node)):
+        sample_translation_dict {int: (networkx
+        node (any hashable object), networkx node)}:
             Dictionary that maps QUBO variable names to potential
             node mappings
 
     Returns:
-        (dict of networkx node (any hashable type): networkx node):
+        { networkx node (any hashable type): networkx node }:
             A mapping from the nodes in the graph to be embedded to the
             target graph
     """
 
     # For each variable in the QUBO that was set to a "1" from the
-    # PyQUBO-translated annealing sample, a valid node mapping exists
+    # annealing sample, a valid node mapping exists
     # and the sample_translation_dict is used to generate a
     # dictionary that contains all valid node mappings for the graph/
-    # subgraph isomorphism
+    # subgraph/induced subgraph isomorphism
     node_translation_dict = {}
     for key in sample.sample.keys():
-        if sample.sample[key] == 1:
+        if key in sample_translation_dict and sample.sample[key] == 1:
             target_node, embed_node = sample_translation_dict[key]
             node_translation_dict[target_node] = embed_node
 
