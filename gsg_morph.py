@@ -245,8 +245,8 @@ def subgraph_isomorphism(graph_to_embed, target_graph, induced=False):
                         Q[td[i, j_p], td[i, i_p]] += 1
 
     # Part of the QUBO that ensures edge preservation
-    # Calude et al. note "the function ... is not necessarily 
-    # edge-invariant: it has only to be “edge-preserving"
+    # Calude et al. note "the function ... is not necessarily
+    # edge-invariant: it has only to be 'edge-preserving'" (p. 64)
 
     for edge in graph_to_embed.edges():
         i, j = graph_to_embed_dict[edge[0]], graph_to_embed_dict[edge[1]]
