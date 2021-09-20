@@ -4,6 +4,14 @@
 
 G/SG Morph is an implementation of [Calude, Dineen, and Hua's "QUBO formulations for the graph isomorphism problem and related problems"](https://doi.org/10.1016/j.tcs.2017.04.016) (Quantum Unconstrained Binary Optimization) QUBO's for finding graph, subgraph, and induced subgraph isomorphisms on quantum annealers.
 
+## Installation
+
+Clone this repository and run the following in the folder (and your choice of python environment!):
+
+```
+pip install .
+```
+
 ## High Level Overview
 
 G/SG Morph consists of two modules, `matrix_form` and `pyqubo_form`, both of which contain three core functions, `graph_isomorphism()`, `subgraph_isomorphism()`, and `translate_sample()` that accomplish identical tasks but are implemented differently. 
