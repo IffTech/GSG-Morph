@@ -40,3 +40,10 @@ Some benchmarking was conducted against Richard Hua's graph isomorphism QUBO gen
 ## Contributing
 
 If you find a bug or have an idea to improve the library, please feel free to either make an Issue or a Pull Request with your suggested changes! If you are contributing code, please do note that this library attempts to follow the [PEP-8 Style Guide for Python Code](https://www.python.org/dev/peps/pep-0008/#package-and-module-names) as well as using [Google Style Python Docstrings](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html)
+
+## Credits
+
+Although all the QUBO formulations used come from [Calude, Dineen, and Hua's "QUBO formulations for the graph isomorphism problem and related problems"](https://doi.org/10.1016/j.tcs.2017.04.016), this library would not have been possible without the following helpful sources:
+
+* [Wangfan Fu's answer to 'What is the square of summation?'](https://math.stackexchange.com/questions/329344/what-is-the-square-of-summation) on the Math Stackexchange site
+* [Dury and Matteo's code from their paper "A QUBO formulation for qubit allocation"](https://github.com/bdury/QUBO-for-Qubit-Allocation) [https://arxiv.org/pdf/2009.00140.pdf](https://arxiv.org/pdf/2009.00140.pdf) served as inspiration for the usage of the Python `product()` function. 
