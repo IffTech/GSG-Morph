@@ -4,6 +4,8 @@
 
 G/SG Morph is an implementation of [Calude, Dineen, and Hua's "QUBO formulations for the graph isomorphism problem and related problems"](https://doi.org/10.1016/j.tcs.2017.04.016) (Quantum Unconstrained Binary Optimization) QUBO's for finding graph, subgraph, and induced subgraph isomorphisms on quantum annealers.
 
+G/SG Morph also contains, with the permission of Richard Hua, a copy of his implementation of the Graph Isomorphism QUBO from his thesis ["Adiabatic Quantum Computing with QUBO Formulations", Appendix E](https://researchspace.auckland.ac.nz/bitstream/handle/2292/31576/whole.pdf?sequence=2&isAllowed=y) which is used for benchmarking (see "Benchmarking" in this README).
+
 ## Installation
 
 Clone this repository and run the following in the folder (and your choice of python environment!):
@@ -30,3 +32,7 @@ Please refer to the Jupyter Notebooks in the `examples` folder.
 
 * `gsgmorph_matrix_form_demo.ipynb` shows the usage of the `matrix_form` module
 * `gsgmorph_pyqubo_form_demo.ipynb` shows the usage of the `pyqubo_form` module
+
+## Benchmarking
+
+Some benchmarking was conducted against Richard Hua's graph isomorphism QUBO generator and G/SG Morph's implementation using Erdos-Renyi graphs in Google Colab. The results and techniques can be found in the `Benchmarking` folder.
