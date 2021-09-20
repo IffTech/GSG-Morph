@@ -1,4 +1,4 @@
-# GSG Morph - The Graph/Subgraph Isomorphism Library for Quantum Annealers.
+# G/SG Morph - The Graph/Subgraph Isomorphism Library for Quantum Annealers.
 # Copyright (C) 2021 If and Only If (Iff) Technologies
 
 # This program is free software: you can redistribute it and/or modify
