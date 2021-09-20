@@ -1,43 +1,24 @@
+# G/SG Morph - The Graph/Subgraph Isomorphism Library for Quantum Annealers.
+# Copyright (C) 2021 If and Only If (Iff) Technologies
+
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 import networkx as nx
 import warnings
 from itertools import product
 from collections import defaultdict
-
-
-class IncompatibleGraphError(Exception):
-    """Exception used when graphs are given to generate a QUBO that
-    fail to satisfy or violate the conditions needed to generate the
-    QUBO.
-
-    Args:
-        message (str):
-            String telling the user why the graphs given cannot be used
-            to generate a certain QUBO.
-    """
-
-    def __init__(self, message):
-        self.message = message
-
-
-def has_edge(graph, edge_tuple):
-    """An implementation of the e_ij constant seen in the QUBO
-    formulas from Calude et al.'s paper
-    (https://doi.org/10.1016/j.tcs.2017.04.016). Returns a 1 if an
-    edge is present in a graph, 0 otherwise.
-
-    Args:
-        graph (networkx.classes.graph.Graph):
-            Undirected NetworkX graph
-        edge_tuple ((any hashable type, any hashable type)):
-            A tuple containing two nodes of the above graph.
-
-    Returns:
-        (int):
-            1 if an edge is present in the graph, 0 otherwise.
-    """
-    if graph.has_edge(*edge_tuple):
-        return 1
-    return 0
+from .utils import IncompatibleGraphError
 
 
 def graph_isomorphism(graph_to_embed, target_graph):
@@ -141,6 +122,173 @@ def graph_isomorphism(graph_to_embed, target_graph):
                         Q[td[j, j_p], td[i, i_p]] += 1
 
     return Q, sample_translation_dict
+
+
+def integer_graph_isomorphism(graph_to_embed, target_graph):
+    """Graph Isomorphism QUBO generator, almost identical to
+    the `graph_isomorphism()` function but only works with
+    graphs containing integer-labeled nodes. This function does NOT
+    return a translation dictionary and DOES NOT perform any
+    safety checks.
+
+    It is presented for the purposes of
+    benchmarking against Richard Hua's implementation of the
+    QUBO generator in his thesis,
+    "Adaibatic Quantum Computing with QUBO Formulations", Appendix E
+    (https://researchspace.auckland.ac.nz/bitstream/handle/2292/31576/
+    whole.pdf?sequence=2&isAllowed=y).
+
+    In order to establish the benchmark on fairer grounds,
+    the `defaultdict(int)` used in all the other functions in
+    `gsgmorph.matrix_form()` has been replaced with a pre-initialized
+    dictionary of identical form to Hua's implementation.
+
+
+    Args:
+        graph_to_embed (networkx.classes.graph.Graph):
+            An undirected graph to be mapped to another graph, with
+            integers used as node labels
+        target_graph (networkx.classes.graph.Graph):
+            An undirected graph that the graph_to_embed (see above)
+            is to be mapped onto, with integers used as node labels
+
+    Returns:
+        defaultdict(int):
+            a QUBO represented by a defaultdict with
+            `int()` as the `default_factory` attribute
+    """
+
+    num_nodes = graph_to_embed.number_of_nodes()
+
+    td = {v: k for k, v in enumerate(product(range(num_nodes),
+                                             range(num_nodes)))}
+
+    # initialize empty QUBO
+    # Q = defaultdict(int)
+    Q = {}
+    for i in range(num_nodes*num_nodes):
+        for j in range(num_nodes*num_nodes):
+            Q[i, j] = 0
+
+    # Ensure mapping function is bijective
+    for i in range(num_nodes):
+        for i_p in range(num_nodes):
+            Q[td[i, i_p], td[i, i_p]] += -2
+            for j, j_p in zip(range(num_nodes), range(num_nodes)):
+                if j != i:
+                    if td[i, i_p] <= td[j, i_p]:
+                        Q[td[i, i_p], td[j, i_p]] += 1
+                    else:
+                        Q[td[j, i_p], td[i, i_p]] += 1
+                if j_p != i_p:
+                    if td[i, i_p] <= td[i, j_p]:
+                        Q[td[i, i_p], td[i, j_p]] += 1
+                    else:
+                        Q[td[i, j_p], td[i, i_p]] += 1
+
+    # Ensure edge invariance
+    for i, j in graph_to_embed.edges():
+        for i_p in range(num_nodes):
+            for j_p in range(num_nodes):
+                if not target_graph.has_edge(i_p, j_p):
+                    if td[i, i_p] <= td[j, j_p]:
+                        Q[td[i, i_p], td[j, j_p]] += 1
+                    else:
+                        Q[td[j, j_p], td[i, i_p]] += 1
+
+    return Q
+
+
+def hua_graph_isomorphism(G1, G2):
+    """Graph isomorphism QUBO generator, created by Richard Hua and
+    used with his permission from his thesis "Adiabatic Quantum
+    Computing with QUBO Formulations",
+    Appendix E and can be obtained here:
+    (https://researchspace.auckland.ac.nz/bitstream/handle/2292/31576/
+    whole.pdf?sequence=2&isAllowed=y)
+
+    This function does NOT
+    return a translation dictionary and DOES NOT perform any
+    safety checks. It is presented for the purposes of
+    benchmarking against the `integer_graph_isomorphism()` function.
+
+    Args:
+        G1 (networkx.classes.graph.Graph):
+            An undirected graph to be mapped to another graph, with
+            integers used as node labels
+        G2 (networkx.classes.graph.Graph):
+            An undirected graph that G1 (see above)
+            is to be mapped onto, with integers used as node labels
+
+
+    Returns:
+        [type]: [description]
+    """
+    n = G1.order()
+    varsDict = {}
+    edgeDict = {}
+
+    # compute constants e_i ,j
+    for i in range(n):
+        for j in range(n):
+            if ((i, j) in G2.edges()) or ((j, i) in G2.edges()):
+                edgeDict[i, j] = 1
+                edgeDict[j, i] = 1
+            else:
+                edgeDict[i, j] = 0
+                edgeDict[j, i] = 0
+    # map each variable to an index in Q
+    index = 0
+    for i in range(n):
+        for j in range(n):
+            varsDict[(i, j)] = index
+            index += 1
+
+    # initialize Q
+    Q = {}
+    for i in range(n*n):
+        for j in range(n*n):
+            Q[i, j] = 0
+
+    # HA part 1
+    for i in range(n):
+        for iprime in range(n):
+            index = varsDict[(i, iprime)]
+            Q[index, index] -= 2
+
+        for iprime1 in range(n):
+            for iprime2 in range(n):
+                index1 = varsDict[(i, iprime1)]
+                index2 = varsDict[(i, iprime2)]
+                Q[index1, index2] += 1
+
+    # HA part 2
+    for iprime in range(n):
+        for i in range(n):
+            index = varsDict[(i, iprime)]
+            Q[index, index] -= 2
+
+        for i1 in range(n):
+            for i2 in range(n):
+                index1 = varsDict[(i1, iprime)]
+                index2 = varsDict[(i2, iprime)]
+                Q[index1, index2] += 1
+
+    # Pij
+    for (i, j) in G1.edges():
+        for iprime in range(n):
+            xiiprime = varsDict[(i, iprime)]
+            for jprime in range(n):
+                xjjprime = varsDict[(j, jprime)]
+                Q[xiiprime, xjjprime] += (1-edgeDict[iprime, jprime])
+
+    for i in range(n*n):
+        for j in range(n*n):
+            if (i > j) and (not(Q[i, j] == 0)):
+                Q[j, i] += Q[i, j]
+                Q[i, j] = 0
+
+    return Q
 
 
 def subgraph_isomorphism(graph_to_embed, target_graph, induced=False):
@@ -285,10 +433,8 @@ def translate_sample(sample, sample_translation_dict):
     functions.
 
     Args:
-        sample (pyqubo.DecodedSample):
-            A sample from an annealer, that has already undergone
-            translation via PyQUBO back into the original QUBO
-            variable names
+        sample (dimod.sampleset.Sample):
+            A sample from an annealer
         sample_translation_dict {int: (networkx
         node (any hashable object), networkx node)}:
             Dictionary that maps QUBO variable names to potential

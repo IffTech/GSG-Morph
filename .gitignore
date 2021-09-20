@@ -1,8 +1,12 @@
 **/__pycache__
 **/.ipynb_checkpoints/
 *.ipynb
-!gsg_morph_demo.ipynb
+!gsgmorph_matrix_form_demo.ipynb
+!gsgmorph_pyqubo_form_demo.ipynb
 *.py
-!gsg_morph.py
+!matrix_form.py
+!pyqubo_form.py
+!utils.py
+!__init__.py
 *.csv
 *.jpg
