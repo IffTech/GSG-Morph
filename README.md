@@ -36,3 +36,7 @@ Please refer to the Jupyter Notebooks in the `examples` folder.
 ## Benchmarking
 
 Some benchmarking was conducted against Richard Hua's graph isomorphism QUBO generator and G/SG Morph's implementation using Erdos-Renyi graphs in Google Colab. The results and techniques can be found in the `Benchmarking` folder.
+
+## Contributing
+
+If you find a bug or have an idea to improve the library, please feel free to either make an Issue or a Pull Request with your suggested changes! If you are contributing code, please do note that this library attempts to follow the [PEP-8 Style Guide for Python Code](https://www.python.org/dev/peps/pep-0008/#package-and-module-names) as well as using [Google Style Python Docstrings](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html)
