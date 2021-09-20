@@ -3,10 +3,11 @@
 *.ipynb
 !gsgmorph_matrix_form_demo.ipynb
 !gsgmorph_pyqubo_form_demo.ipynb
+!edge_benchmarking.ipynb
+!node_benchmarking.ipynb
 *.py
 !matrix_form.py
 !pyqubo_form.py
 !utils.py
 !__init__.py
-*.csv
 *.jpg
