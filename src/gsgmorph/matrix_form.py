@@ -134,7 +134,7 @@ def integer_graph_isomorphism(graph_to_embed, target_graph):
     It is presented for the purposes of
     benchmarking against Richard Hua's implementation of the
     QUBO generator in his thesis,
-    "Adaibatic Quantum Computing with QUBO Formulations", Appendix E
+    "Adiabatic Quantum Computing with QUBO Formulations", Appendix E
     (https://researchspace.auckland.ac.nz/bitstream/handle/2292/31576/
     whole.pdf?sequence=2&isAllowed=y).
 
