@@ -18,7 +18,7 @@ pip install .
 
 G/SG Morph consists of two modules, `matrix_form` and `pyqubo_form`, both of which contain three core functions, `graph_isomorphism()`, `subgraph_isomorphism()`, and `translate_sample()` that accomplish identical tasks but are implemented differently. 
 
-`matrix_form` relies on the usage of dictionaries to provide a matrix representing the QUBO, while `pyqubo_form` uses the [PyQUBO](https://github.com/recruit-communications/pyqubo) library to express QUBOs.
+`matrix_form` relies on the usage of dictionaries to provide a matrix representing the QUBO, while `pyqubo_form` uses the [PyQUBO](https://github.com/recruit-communications/pyqubo) library to express QUBOs. Note that `pyqubo_form` has been intentionally programmed to follow the math presented in Calude, Dineen, and Hua's paper as closely as possible (with minor adjustments made to satisfy Python syntax). 
 
 Both `graph_isomorphism()` and `subgraph_isomorphism()` take two [NetworkX](https://networkx.org/) graphs (a "graph to embed" onto a  "target graph") and will generate a QUBO suitable for running on a simulated annealer such as [D-Wave Neal](https://github.com/dwavesystems/dwave-neal) or actual hardware.
 
@@ -35,7 +35,7 @@ Please refer to the Jupyter Notebooks in the `examples` folder.
 
 ## Benchmarking
 
-Some benchmarking was conducted against Richard Hua's graph isomorphism QUBO generator and G/SG Morph's implementation using Erdos-Renyi graphs in Google Colab. The results and techniques can be found in the `Benchmarking` folder.
+Some benchmarking was conducted against Richard Hua's graph isomorphism QUBO generator and G/SG Morph's `matrix_form` implementation using Erdos-Renyi graphs in Google Colab. The results and techniques can be found in the `Benchmarking` folder.
 
 ## Contributing
 
