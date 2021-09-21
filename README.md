@@ -8,7 +8,13 @@ G/SG Morph also contains, with the permission of Richard Hua, a copy of his impl
 
 ## Installation
 
-Clone this repository and run the following in the folder (and your choice of python environment!):
+You can either 
+
+```
+pip install gsgmorph
+```
+
+or clone this repository and run the following in the folder (and your choice of python environment!):
 
 ```
 pip install .
