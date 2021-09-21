@@ -2,7 +2,7 @@
 
 ## The Graph/Subgraph Isomorphism Library for Quantum Annealers
 
-G/SG Morph is an implementation of [Calude, Dineen, and Hua's "QUBO formulations for the graph isomorphism problem and related problems"](https://doi.org/10.1016/j.tcs.2017.04.016) (Quantum Unconstrained Binary Optimization) QUBO's for finding graph, subgraph, and induced subgraph isomorphisms on quantum annealers.
+G/SG Morph is an implementation of [Calude, Dinneen, and Hua's "QUBO formulations for the graph isomorphism problem and related problems"](https://doi.org/10.1016/j.tcs.2017.04.016) (Quantum Unconstrained Binary Optimization) QUBO's for finding graph, subgraph, and induced subgraph isomorphisms on quantum annealers.
 
 G/SG Morph also contains, with the permission of Richard Hua, a copy of his implementation of the Graph Isomorphism QUBO from his thesis ["Adiabatic Quantum Computing with QUBO Formulations", Appendix E](https://researchspace.auckland.ac.nz/bitstream/handle/2292/31576/whole.pdf?sequence=2&isAllowed=y) which is used for benchmarking (see "Benchmarking" in this README).
 
@@ -49,7 +49,7 @@ If you find a bug or have an idea to improve the library, please feel free to ei
 
 ## Credits
 
-Although all the QUBO formulations used come from [Calude, Dineen, and Hua's "QUBO formulations for the graph isomorphism problem and related problems"](https://doi.org/10.1016/j.tcs.2017.04.016), this library would not have been possible without the following helpful sources:
+Although all the QUBO formulations used come from [Calude, Dinneen, and Hua's "QUBO formulations for the graph isomorphism problem and related problems"](https://doi.org/10.1016/j.tcs.2017.04.016), this library would not have been possible without the following helpful sources:
 
 * [Wangfan Fu's answer to 'What is the square of summation?'](https://math.stackexchange.com/questions/329344/what-is-the-square-of-summation) on the Math Stackexchange site
 * [Dury and Matteo's code from their paper "A QUBO formulation for qubit allocation"](https://github.com/bdury/QUBO-for-Qubit-Allocation) [https://arxiv.org/pdf/2009.00140.pdf](https://arxiv.org/pdf/2009.00140.pdf) served as inspiration for the usage of the Python `product()` function. 
