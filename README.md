@@ -57,3 +57,4 @@ Although all the QUBO formulations used come from [Calude, Dineen, and Hua's "QU
 * [SilentGhost's answer to "Reverse / invert a dictionary mapping"](https://stackoverflow.com/a/483833)
 * [ars' answer to "Get difference between two lists"](https://stackoverflow.com/a/3462160)
 * [Mccreesh, Prosser, Solnon, and Trimble's paper "When Subgraph Isomorphism is Really Hard, and Why This Matters for Graph Databases](https://hal.archives-ouvertes.fr/hal-01741928/document) for providing a graph to test the Induced Subgraph Isomorphism problem on
+* [Dan D.'s answer to "what is diffrence between number and repeat in python timeit?"](https://stackoverflow.com/a/56763499)
