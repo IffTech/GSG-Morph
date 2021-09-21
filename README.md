@@ -47,3 +47,7 @@ Although all the QUBO formulations used come from [Calude, Dineen, and Hua's "QU
 
 * [Wangfan Fu's answer to 'What is the square of summation?'](https://math.stackexchange.com/questions/329344/what-is-the-square-of-summation) on the Math Stackexchange site
 * [Dury and Matteo's code from their paper "A QUBO formulation for qubit allocation"](https://github.com/bdury/QUBO-for-Qubit-Allocation) [https://arxiv.org/pdf/2009.00140.pdf](https://arxiv.org/pdf/2009.00140.pdf) served as inspiration for the usage of the Python `product()` function. 
+* [PyQUBO Documentation: Integration with D-Wave Ocean](https://pyqubo.readthedocs.io/en/latest/#integration-with-d-wave-ocean) for showing how to use [D-Wave Neal](https://docs.ocean.dwavesys.com/en/stable/docs_neal/sdk_index.html) with PyQUBO
+* [SilentGhost's answer to "Reverse / invert a dictionary mapping"](https://stackoverflow.com/a/483833)
+* [ars' answer to "Get difference between two lists"](https://stackoverflow.com/a/3462160)
+* [Mccreesh, Prosser, Solnon, and Trimble's paper "When Subgraph Isomorphism is Really Hard, and Why This Matters for Graph Databases](https://hal.archives-ouvertes.fr/hal-01741928/document) for providing a graph to test the Induced Subgraph Isomorphism problem on
