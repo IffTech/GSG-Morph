@@ -11,3 +11,5 @@
 !utils.py
 !__init__.py
 *.jpg
+dist/*
+*.egg-info/
