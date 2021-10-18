@@ -6,6 +6,8 @@ G/SG Morph is an implementation of [Calude, Dinneen, and Hua's "QUBO formulation
 
 G/SG Morph also contains, with the permission of Richard Hua, a copy of his implementation of the Graph Isomorphism QUBO from his thesis ["Adiabatic Quantum Computing with QUBO Formulations", Appendix E](https://researchspace.auckland.ac.nz/bitstream/handle/2292/31576/whole.pdf?sequence=2&isAllowed=y) which is used for benchmarking (see "Benchmarking" in this README).
 
+G/SG Morph has also been cited by the previously mentioned authors in an [update to a report under the University of Auckland CDMTCS (Centre for Discrete Mathematics and COmputer Science) (scroll to entry 499, "Update.pdf")](https://www.cs.auckland.ac.nz/research/groups/CDMTCS/researchreports/publication-list-bydate.php?selected-date=2016%3E) with the same name as the previously mentioned paper.
+
 ## Installation
 
 You can either 
